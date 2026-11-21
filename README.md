@@ -1,3 +1,73 @@
+# Mixxx, with a bit more zoom
+
+This is a fork of [Mixxx](https://github.com/mixxxdj/mixxx), the free DJ software, based on
+**Mixxx 2.5.6**. Mixxx is GPL-2.0-or-later, and so is everything I added. All the hard work is
+the Mixxx team's. I just bent two things to fit the way I DJ at home.
+
+<p align="center">
+  <img src="docs/fork/hero.png" alt="This fork running on Linux: zoomed-out waveforms, the Folders tree and the Preparation panel">
+</p>
+
+## Why
+
+Two things bugged me in stock Mixxx: the beat grid zoom, and not having a split view.
+
+## What's different
+
+### Waveform zoom and beat grid
+
+<p align="center">
+  <img src="docs/fork/waveform.png" alt="Zoomed-out waveforms with bar and 16-beat markers">
+</p>
+
+- **Configurable max zoom-out**, up to 100 by default. Zoom buttons step by 1.25x, the mouse
+  wheel by 1.12x, and decks stay in sync.
+- **Beat grid styles**: full lines, small ticks on the top and bottom edges (keeps the waveform
+  clean), or bar lines with ticks for the other beats.
+- **Adaptive density**: when you zoom out, beats that get too close fade away, then bars, so you
+  still see bars (every 4 beats) and 16-beat markers instead of a solid wall of lines.
+- **Ordinary beat opacity** and an optional **color for bar and 16-beat markers**.
+- All of it lives in *Preferences → Waveforms* and is saved in your profile.
+
+Bars are counted from the first beat grid marker and assume 4 beats per bar. The 16-beat markers
+are fixed visual references, not detected phrases. The beat grid options need a modern GLSL
+waveform (one without "legacy" in its name).
+
+### Folders and the Preparation panel
+
+<p align="center">
+  <img src="docs/fork/library.png" alt="The Folders tree on the left and the Preparation panel on the right of the library">
+</p>
+
+- **Folders** in the library sidebar: your music folders as a tree, with track counts. Right-click
+  a folder to analyze it (subfolders included), add it to Preparation, make a crate out of it,
+  send it to Auto DJ, or open it in the file browser.
+- **Preparation panel**: a playlist that sits next to the library, so you can browse on one side
+  and stack the next tracks on the other. Toggle it with the **PREP** button in the toolbar, and
+  pick which playlist it shows. Playlists, crates and folders get an *Add to Preparation* action.
+
+The panel and the PREP button are only in the **LateNight** skin.
+
+## Building
+
+Same as upstream Mixxx: see the [build guide](https://github.com/mixxxdj/mixxx/wiki/Compiling-on-Linux).
+In short:
+
+```sh
+git clone -b waveform-zoom-and-prep https://github.com/luigiluna/mixxx.git
+cd mixxx
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+./build/mixxx
+```
+
+I only use it on my own machine (CachyOS). For everything else (bugs in Mixxx itself, docs,
+releases), go to [mixxxdj/mixxx](https://github.com/mixxxdj/mixxx).
+
+Below is upstream's README, untouched.
+
+---
+
 # Mixxx
 
 [![GitHub latest tag](https://img.shields.io/github/tag/mixxxdj/mixxx.svg)](https://mixxx.org/download)
