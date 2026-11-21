@@ -12,6 +12,7 @@
 #include "library/library.h"
 #include "library/library_prefs.h"
 #include "library/parser.h"
+#include "library/preparationplaylist.h"
 #include "library/parsercsv.h"
 #include "library/trackcollection.h"
 #include "library/trackcollectionmanager.h"
@@ -107,6 +108,12 @@ void CrateFeature::initActions() {
             &QAction::triggered,
             this,
             &CrateFeature::slotAnalyzeCrate);
+
+    m_pAddToPreparationAction = make_parented<QAction>(tr("Add to Preparation"), this);
+    connect(m_pAddToPreparationAction.get(),
+            &QAction::triggered,
+            this,
+            &CrateFeature::slotAddCrateToPreparation);
 
     m_pImportPlaylistAction = make_parented<QAction>(tr("Import Crate"), this);
     connect(m_pImportPlaylistAction.get(),
@@ -400,6 +407,7 @@ void CrateFeature::onRightClickChild(
     menu.addAction(m_pDeleteCrateAction.get());
     menu.addAction(m_pLockCrateAction.get());
     menu.addSeparator();
+    menu.addAction(m_pAddToPreparationAction.get());
     menu.addAction(m_pAutoDjTrackSourceAction.get());
     menu.addSeparator();
     menu.addAction(m_pAnalyzeCrateAction.get());
@@ -746,6 +754,27 @@ void CrateFeature::slotCreateImportCrate() {
         slotImportPlaylistFile(playlistFile, lastCrateId);
     }
     activateCrate(lastCrateId);
+}
+
+void CrateFeature::slotAddCrateToPreparation() {
+    if (!m_lastRightClickedIndex.isValid()) {
+        return;
+    }
+    const CrateId crateId = crateIdFromIndex(m_lastRightClickedIndex);
+    if (!crateId.isValid()) {
+        return;
+    }
+    QList<TrackId> trackIds;
+    {
+        CrateTrackSelectResult crateTracks(
+                m_pTrackCollection->crates().selectCrateTracksSorted(crateId));
+        while (crateTracks.next()) {
+            trackIds.append(crateTracks.trackId());
+        }
+    }
+    mixxx::preparation::appendTracks(m_pConfig,
+            m_pTrackCollection->getPlaylistDAO(),
+            trackIds);
 }
 
 void CrateFeature::slotAnalyzeCrate() {

@@ -52,8 +52,10 @@
 #include "widget/wknob.h"
 #include "widget/wknobcomposed.h"
 #include "widget/wlabel.h"
+#include "util/math.h"
 #include "widget/wlibrary.h"
 #include "widget/wlibrarysidebar.h"
+#include "widget/wpreparationpanel.h"
 #include "widget/wnumber.h"
 #include "widget/wnumberdb.h"
 #include "widget/wnumberpos.h"
@@ -617,6 +619,8 @@ QList<QWidget*> LegacySkinParser::parseNode(const QDomElement& node) {
         result = wrapWidget(parseLibrarySidebar(node));
     } else if (nodeName == "Library") {
         result = wrapWidget(parseLibrary(node));
+    } else if (nodeName == "PreparationPanel") {
+        result = wrapWidget(parsePreparationPanel(node));
     } else if (nodeName == "Key") {
         result = wrapWidget(parseEngineKey(node));
     } else if (nodeName == "Battery") {
@@ -1600,6 +1604,23 @@ QWidget* LegacySkinParser::parseLibrary(const QDomElement& node) {
     commonWidgetSetup(node, pLibraryWidget, false);
 
     return pLibraryWidget;
+}
+
+QWidget* LegacySkinParser::parsePreparationPanel(const QDomElement& node) {
+    const double opacity = math_clamp(
+            m_pContext->selectDouble(node,
+                    "TrackTableBackgroundColorOpacity",
+                    WLibrary::kDefaultTrackTableBackgroundColorOpacity),
+            WLibrary::kMinTrackTableBackgroundColorOpacity,
+            WLibrary::kMaxTrackTableBackgroundColorOpacity);
+    WPreparationPanel* pPanel = new WPreparationPanel(m_pParent,
+            m_pConfig,
+            m_pLibrary,
+            m_pKeyboard,
+            opacity);
+    pPanel->installEventFilter(m_pKeyboard);
+    commonWidgetSetup(node, pPanel, false);
+    return pPanel;
 }
 
 QWidget* LegacySkinParser::parseLibrarySidebar(const QDomElement& node) {

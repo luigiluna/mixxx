@@ -14,6 +14,7 @@
 #include "library/export/libraryexporter.h"
 #endif
 #include "library/externaltrackcollection.h"
+#include "library/folders/libraryfolderfeature.h"
 #include "library/itunes/itunesfeature.h"
 #include "library/library_prefs.h"
 #include "library/librarycontrol.h"
@@ -73,7 +74,8 @@ Library::Library(
           m_pMixxxLibraryFeature(nullptr),
           m_pPlaylistFeature(nullptr),
           m_pCrateFeature(nullptr),
-          m_pAnalysisFeature(nullptr) {
+          m_pAnalysisFeature(nullptr),
+          m_pLibraryFolderFeature(nullptr) {
     qRegisterMetaType<LibraryRemovalType>("LibraryRemovalType");
 
     m_pKeyNotation.reset(
@@ -134,6 +136,13 @@ Library::Library(
             &BrowseFeature::slotLibraryScanFinished);
     addFeature(m_pBrowseFeature);
 
+    m_pLibraryFolderFeature = new LibraryFolderFeature(this, m_pConfig);
+    connect(m_pTrackCollectionManager,
+            &TrackCollectionManager::libraryScanFinished,
+            m_pLibraryFolderFeature,
+            &LibraryFolderFeature::slotRebuildFolderTree);
+    addFeature(m_pLibraryFolderFeature);
+
     addFeature(new RecordingFeature(this, m_pConfig, pRecordingManager));
 
     addFeature(new SetlogFeature(this, UserSettingsPointer(m_pConfig)));
@@ -145,6 +154,10 @@ Library::Library(
             &AnalysisFeature::analyzeTracks);
     connect(m_pCrateFeature,
             &CrateFeature::analyzeTracks,
+            m_pAnalysisFeature,
+            &AnalysisFeature::analyzeTracks);
+    connect(m_pLibraryFolderFeature,
+            &LibraryFolderFeature::analyzeTracks,
             m_pAnalysisFeature,
             &AnalysisFeature::analyzeTracks);
     connect(this,

@@ -4,6 +4,7 @@
 #include <QSqlTableModel>
 #include <QtDebug>
 
+#include "library/preparationplaylist.h"
 #include "library/library.h"
 #include "library/parser.h"
 #include "library/playlisttablemodel.h"
@@ -79,6 +80,10 @@ void PlaylistFeature::onRightClickChild(
     menu.addAction(m_pDeletePlaylistAction);
     menu.addAction(m_pLockPlaylistAction);
     menu.addSeparator();
+    if (playlistId != m_pConfig->getValue(
+                              mixxx::preparation::playlistIdConfigKey(), -1)) {
+        menu.addAction(m_pAddToPreparationAction);
+    }
     menu.addAction(m_pAddToAutoDJAction);
     menu.addAction(m_pAddToAutoDJTopAction);
     menu.addAction(m_pAddToAutoDJReplaceAction);

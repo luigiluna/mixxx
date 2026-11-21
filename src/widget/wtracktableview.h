@@ -43,6 +43,20 @@ class WTrackTableView : public WLibraryTableView {
     void activateSelectedTrack();
     void loadSelectedTrackToGroup(const QString& group, bool play);
     void assignNextTrackColor() override;
+
+    /// Never sort this view and don't follow the global [Library],sort_column
+    /// and sort_order controls. Used for views that must always show the
+    /// playlist order, e.g. the preparation panel. Applies from the next
+    /// loadTrackModel() on.
+    void setSortingDisabled(bool disabled) {
+        m_sortingDisabled = disabled;
+    }
+    /// Accept tracks dragged from other track table views. By default drags
+    /// from track tables are rejected, because there is only one main
+    /// library table and dropping into the source view makes no sense.
+    void setAcceptDropsFromOtherTrackViews(bool accept) {
+        m_acceptDropsFromOtherTrackViews = accept;
+    }
     void assignPreviousTrackColor() override;
     TrackModel::SortColumnId getColumnIdFromCurrentIndex() override;
     QList<TrackId> getSelectedTrackIds() const;
@@ -178,6 +192,8 @@ class WTrackTableView : public WLibraryTableView {
     QColor m_trackPlayedColor;
     QColor m_trackMissingColor;
     bool m_sorting;
+    bool m_sortingDisabled;
+    bool m_acceptDropsFromOtherTrackViews;
 
     // Control the delay to load a cover art.
     mixxx::Duration m_lastUserAction;

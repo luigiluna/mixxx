@@ -977,6 +977,8 @@ add_library(mixxx-lib STATIC EXCLUDE_FROM_ALL
   src/library/export/trackexportwizard.cpp
   src/library/export/trackexportworker.cpp
   src/library/externaltrackcollection.cpp
+  src/library/folders/libraryfolderfeature.cpp
+  src/library/folders/libraryfoldertablemodel.cpp
   src/library/itunes/itunesdao.cpp
   src/library/itunes/itunesfeature.cpp
   src/library/itunes/itunesimporter.cpp
@@ -999,6 +1001,7 @@ add_library(mixxx-lib STATIC EXCLUDE_FROM_ALL
   src/library/parserm3u.cpp
   src/library/parserpls.cpp
   src/library/playlisttablemodel.cpp
+  src/library/preparationplaylist.cpp
   src/library/proxytrackmodel.cpp
   src/library/recording/dlgrecording.cpp
   src/library/recording/dlgrecording.ui
@@ -1325,6 +1328,7 @@ add_library(mixxx-lib STATIC EXCLUDE_FROM_ALL
   src/widget/wlabel.cpp
   src/widget/wlibrary.cpp
   src/widget/wlibrarysidebar.cpp
+  src/widget/wpreparationpanel.cpp
   src/widget/wlibrarytableview.cpp
   src/widget/wlibrarytextbrowser.cpp
   src/widget/wmainmenubar.cpp

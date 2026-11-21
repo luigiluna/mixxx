@@ -7,6 +7,7 @@
 #include <QSqlTableModel>
 #include <QStandardPaths>
 
+#include "library/preparationplaylist.h"
 #include "library/export/trackexportwizard.h"
 #include "library/library.h"
 #include "library/library_prefs.h"
@@ -123,6 +124,12 @@ void BasePlaylistFeature::initActions() {
             &QAction::triggered,
             this,
             &BasePlaylistFeature::slotAnalyzePlaylist);
+
+    m_pAddToPreparationAction = new QAction(tr("Add to Preparation"), this);
+    connect(m_pAddToPreparationAction,
+            &QAction::triggered,
+            this,
+            &BasePlaylistFeature::slotAddPlaylistToPreparation);
 
     m_pImportPlaylistAction = new QAction(tr("Import Playlist"), this);
     connect(m_pImportPlaylistAction,
@@ -694,6 +701,19 @@ void BasePlaylistFeature::slotAnalyzePlaylist() {
             emit analyzeTracks(tracks);
         }
     }
+}
+
+void BasePlaylistFeature::slotAddPlaylistToPreparation() {
+    if (!m_lastRightClickedIndex.isValid()) {
+        return;
+    }
+    const int playlistId = playlistIdFromIndex(m_lastRightClickedIndex);
+    if (playlistId < 0) {
+        return;
+    }
+    mixxx::preparation::appendTracks(m_pConfig,
+            m_playlistDao,
+            m_playlistDao.getTrackIds(playlistId));
 }
 
 TreeItemModel* BasePlaylistFeature::sidebarModel() const {

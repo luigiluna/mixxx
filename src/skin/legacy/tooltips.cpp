@@ -283,6 +283,12 @@ void Tooltips::addStandardTooltips() {
             << tr("Maximize Library")
             << tr("Hide all skin sections except the decks to have more screen space for the track library.");
 
+    add("show_preparation_panel")
+            << tr("Toggle Preparation Panel")
+            << tr("Show or hide the preparation panel next to the library. "
+                  "It shows a playlist (\"Preparation\" by default) where you can "
+                  "collect tracks for your set by dragging them from the library.");
+
     add("show_mixer")
             << tr("Toggle Mixer")
             << tr("Show or hide the mixer.");

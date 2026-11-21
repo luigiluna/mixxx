@@ -17,6 +17,7 @@
 
 class AnalysisFeature;
 class BrowseFeature;
+class LibraryFolderFeature;
 class ControlObject;
 class CrateFeature;
 class LibraryControl;
@@ -174,6 +175,7 @@ class Library: public QObject {
     CrateFeature* m_pCrateFeature;
     AnalysisFeature* m_pAnalysisFeature;
     BrowseFeature* m_pBrowseFeature;
+    LibraryFolderFeature* m_pLibraryFolderFeature;
     QFont m_trackTableFont;
     int m_iTrackTableRowHeight;
     bool m_editMetadataSelectedClick;

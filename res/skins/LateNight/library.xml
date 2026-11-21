@@ -106,11 +106,41 @@
                 </Children>
               </WidgetGroup><!-- LibSidebarContainer -->
 
-              <!-- Library Table-->
-              <Library>
-                <ShowButtonText>false</ShowButtonText>
-                <TrackTableBackgroundColorOpacity>0.175</TrackTableBackgroundColorOpacity>
-              </Library>
+              <!-- Library Table + Preparation panel -->
+              <Splitter>
+                <!-- Same object name as the outer splitter for identical handle style -->
+                <ObjectName>LibrarySplitter</ObjectName>
+                <SizePolicy>me,me</SizePolicy>
+                <SplitSizes>3,1</SplitSizes>
+                <SplitSizesConfigKey>[Skin],libraryPreparation_splitsize</SplitSizesConfigKey>
+                <Collapsible>0,0</Collapsible>
+                <Children>
+
+                  <!-- Library Table-->
+                  <Library>
+                    <ShowButtonText>false</ShowButtonText>
+                    <TrackTableBackgroundColorOpacity>0.175</TrackTableBackgroundColorOpacity>
+                  </Library>
+
+                  <!-- Preparation panel, toggled with the PREP button in the toolbar -->
+                  <WidgetGroup>
+                    <ObjectName>PreparationPanelContainer</ObjectName>
+                    <Layout>vertical</Layout>
+                    <SizePolicy>me,me</SizePolicy>
+                    <MinimumSize>150,</MinimumSize>
+                    <Children>
+                      <PreparationPanel>
+                        <TrackTableBackgroundColorOpacity>0.175</TrackTableBackgroundColorOpacity>
+                      </PreparationPanel>
+                    </Children>
+                    <Connection>
+                      <ConfigKey persist="true">[Skin],show_preparation_panel</ConfigKey>
+                      <BindProperty>visible</BindProperty>
+                    </Connection>
+                  </WidgetGroup>
+
+                </Children>
+              </Splitter>
 
             </Children>
           </Splitter><!-- LibrarySplitter -->

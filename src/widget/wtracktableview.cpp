@@ -53,6 +53,8 @@ WTrackTableView::WTrackTableView(QWidget* pParent,
           m_trackPlayedColor(QColor(kDefaultTrackPlayedColor)),
           m_trackMissingColor(QColor(kDefaultTrackMissingColor)),
           m_sorting(false),
+          m_sortingDisabled(false),
+          m_acceptDropsFromOtherTrackViews(false),
           m_selectionChangedSinceLastGuiTick(true),
           m_loadCachedOnly(false) {
     // Connect slots and signals to make the world go 'round.
@@ -197,7 +199,8 @@ void WTrackTableView::loadTrackModel(QAbstractItemModel* pNewModel, bool restore
         return;
     }
 
-    m_sorting = pNewTrackModel->hasCapabilities(TrackModel::Capability::Sorting);
+    m_sorting = !m_sortingDisabled &&
+            pNewTrackModel->hasCapabilities(TrackModel::Capability::Sorting);
 
     // If the model has not changed there's no need to exchange the headers
     // which would cause a small GUI freeze
@@ -712,6 +715,11 @@ void WTrackTableView::dragEnterEvent(QDragEnterEvent * event) {
         if (pTrackModel->hasCapabilities(TrackModel::Capability::Reorder)) {
             event->acceptProposedAction();
         }
+    } else if (m_acceptDropsFromOtherTrackViews &&
+            qobject_cast<WTrackTableView*>(event->source())) {
+        // Tracks dragged from another track table, e.g. from the main
+        // library into the preparation panel.
+        event->acceptProposedAction();
     } else if (DragAndDropHelper::dragEnterAccept(*event->mimeData(),
                        "library",
                        true,
@@ -1756,7 +1764,7 @@ void WTrackTableView::selectTracksById(const QList<TrackId>& trackIds, int prevC
 void WTrackTableView::applySortingIfVisible() {
     // There are multiple instances of WTrackTableView, but we only want to
     // apply the sorting to the currently visible instance
-    if (!isVisible()) {
+    if (!isVisible() || m_sortingDisabled) {
         return;
     }
 
