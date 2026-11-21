@@ -15,6 +15,7 @@
 #include "mixer/playermanager.h"
 #include "moc_basetrackplayer.cpp"
 #include "track/track.h"
+#include "util/math.h"
 #include "util/sandbox.h"
 #include "vinylcontrol/defs_vinylcontrol.h"
 #include "waveform/renderers/waveformwidgetrenderer.h"
@@ -24,6 +25,8 @@ namespace {
 constexpr double kNoTrackColor = -1;
 constexpr double kShiftCuesOffsetMillis = 10;
 constexpr double kShiftCuesOffsetSmallMillis = 1;
+// Factor applied per waveform_zoom_up/down press: 1 -> 100 in ~21 steps.
+constexpr double kWaveformZoomStep = 1.25;
 const QString kEffectGroupFormat = QStringLiteral("[EqualizerRack1_%1_Effect1]");
 
 inline double trackColorToDouble(mixxx::RgbColor::optional_t color) {
@@ -913,7 +916,10 @@ void BaseTrackPlayerImpl::slotWaveformZoomUp(double pressed) {
         return;
     }
 
-    m_pWaveformZoom->set(m_pWaveformZoom->get() + 1.0);
+    // Multiplicative steps so the whole 1..max range is reachable in a
+    // reasonable number of presses; clamp so the last step reaches the limit.
+    m_pWaveformZoom->set(math_min(m_pWaveformZoom->get() * kWaveformZoomStep,
+            WaveformWidgetRenderer::s_waveformMaxZoom));
 }
 
 void BaseTrackPlayerImpl::slotWaveformZoomDown(double pressed) {
@@ -921,7 +927,8 @@ void BaseTrackPlayerImpl::slotWaveformZoomDown(double pressed) {
         return;
     }
 
-    m_pWaveformZoom->set(m_pWaveformZoom->get() - 1.0);
+    m_pWaveformZoom->set(math_max(m_pWaveformZoom->get() / kWaveformZoomStep,
+            WaveformWidgetRenderer::s_waveformMinZoom));
 }
 
 void BaseTrackPlayerImpl::slotWaveformZoomSetDefault(double pressed) {

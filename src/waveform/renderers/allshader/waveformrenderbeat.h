@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QColor>
+#include <vector>
 
 #include "shaders/unicolorshader.h"
 #include "util/class.h"
@@ -25,9 +26,24 @@ class allshader::WaveformRenderBeat final : public allshader::WaveformRenderer {
     void initializeGL() override;
 
   private:
+    // Beat grid line classes, drawn in increasing order of prominence.
+    enum Level {
+        kBeat = 0,
+        kBar = 1,    // every 4 beats (downbeat)
+        kPhrase = 2, // every 16 beats
+        kLevelCount = 3,
+    };
+    struct BeatLine {
+        float x;
+        Level level;
+    };
+
+    void drawVertices(const VertexData& vertices, const QColor& baseColor, float alpha);
+
     mixxx::UnicolorShader m_shader;
     QColor m_color;
-    VertexData m_vertices;
+    VertexData m_vertices[kLevelCount];
+    std::vector<BeatLine> m_lines;
 
     bool m_isSlipRenderer;
 

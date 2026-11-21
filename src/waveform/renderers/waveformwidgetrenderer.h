@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QColor>
+
 #include "track/track_decl.h"
 #include "util/class.h"
 #include "waveform/renderers/waveformmark.h"
@@ -18,7 +20,9 @@ class WaveformRendererAbstract;
 class WaveformWidgetRenderer {
   public:
     static const double s_waveformMinZoom;
-    static const double s_waveformMaxZoom;
+    static constexpr int s_waveformDefaultMaxZoom = 100;
+    // Loaded once from [Waveform] MaxZoom before creating waveform widgets.
+    static double s_waveformMaxZoom;
     static const double s_waveformDefaultZoom;
     static const double s_defaultPlayMarkerPosition;
 
@@ -77,6 +81,41 @@ class WaveformWidgetRenderer {
 
     void setDisplayBeatGrid(bool set);
     void setDisplayBeatGridAlpha(int alpha);
+
+    // How beat grid lines are drawn (GLSL/allshader waveforms only).
+    enum class BeatGridStyle {
+        Lines = 0,  // full-height line for every beat (original behaviour)
+        Ticks = 1,  // short ticks at top and bottom edges only
+        Hybrid = 2, // full-height lines for bars, ticks for other beats
+    };
+    void setBeatGridStyle(BeatGridStyle style) {
+        m_beatGridStyle = style;
+    }
+    BeatGridStyle getBeatGridStyle() const {
+        return m_beatGridStyle;
+    }
+    // When enabled, beats/bars are faded out when they get too dense
+    // (zoomed out) and bars/phrases are emphasized.
+    void setBeatGridAdaptive(bool adaptive) {
+        m_beatGridAdaptive = adaptive;
+    }
+    bool isBeatGridAdaptive() const {
+        return m_beatGridAdaptive;
+    }
+    void setBeatGridBeatAlpha(int alpha) {
+        m_beatGridBeatAlpha = alpha;
+    }
+    int getBeatGridBeatAlpha() const {
+        return m_beatGridBeatAlpha;
+    }
+    // Optional color for bar (every 4 beats) and 16-beat markers. An invalid
+    // color means "use the skin's BeatColor" (default).
+    void setBeatGridAccentColor(const QColor& color) {
+        m_beatGridAccentColor = color;
+    }
+    const QColor& getBeatGridAccentColor() const {
+        return m_beatGridAccentColor;
+    }
 
     double getVisualSamplePerPixel() const {
         return m_visualSamplePerPixel;
@@ -213,6 +252,10 @@ class WaveformWidgetRenderer {
     double m_audioSamplePerPixel;
 
     int m_alphaBeatGrid;
+    BeatGridStyle m_beatGridStyle;
+    bool m_beatGridAdaptive;
+    int m_beatGridBeatAlpha;
+    QColor m_beatGridAccentColor;
 
     //TODO: vRince create some class to manage control/value
     //ControlConnection

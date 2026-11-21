@@ -12,6 +12,11 @@
 #include "widget/wcuemenupopup.h"
 #include "widget/wglwidget.h"
 
+namespace {
+// Zoom factor per mouse wheel notch: 1 -> 100 in ~41 notches.
+constexpr double kWheelZoomStep = 1.12;
+} // namespace
+
 WWaveformViewer::WWaveformViewer(
         const QString& group,
         UserSettingsPointer pConfig,
@@ -195,9 +200,9 @@ void WWaveformViewer::mouseReleaseEvent(QMouseEvent* /*event*/) {
 void WWaveformViewer::wheelEvent(QWheelEvent* event) {
     if (m_waveformWidget) {
         if (event->angleDelta().y() > 0) {
-            onZoomChange(m_waveformWidget->getZoomFactor() / 1.05);
+            onZoomChange(m_waveformWidget->getZoomFactor() / kWheelZoomStep);
         } else if (event->angleDelta().y() < 0) {
-            onZoomChange(m_waveformWidget->getZoomFactor() * 1.05);
+            onZoomChange(m_waveformWidget->getZoomFactor() * kWheelZoomStep);
         }
     }
 }

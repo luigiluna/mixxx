@@ -304,6 +304,86 @@ Select from different types of displays for the waveform, which differ primarily
       </widget>
      </item>
 
+     <item row="8" column="0">
+      <widget class="QLabel" name="beatGridStyleLabel">
+       <property name="text">
+        <string>Beat grid style</string>
+       </property>
+       <property name="buddy">
+        <cstring>beatGridStyleComboBox</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="1" colspan="2">
+      <widget class="QComboBox" name="beatGridStyleComboBox">
+       <property name="toolTip">
+        <string>How beat grid lines are drawn. Ticks only mark the top and bottom edges, keeping the waveform clean. Requires a modern GLSL waveform (without "legacy" in its name).</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="3">
+      <widget class="QCheckBox" name="beatGridAdaptiveCheckBox">
+       <property name="toolTip">
+        <string>When zoomed out, hide beats that are too close together and show only bars (every 4 beats) or phrases (every 16 beats). Bars and phrases are emphasized. Requires a modern GLSL waveform (without "legacy" in its name).</string>
+       </property>
+       <property name="text">
+        <string>Adaptive density</string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="2">
+      <widget class="QLabel" name="beatGridBeatAlphaLabel">
+       <property name="text">
+        <string>Ordinary beat opacity</string>
+       </property>
+       <property name="buddy">
+        <cstring>beatGridBeatAlphaSpinBox</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="3">
+      <widget class="QSpinBox" name="beatGridBeatAlphaSpinBox">
+       <property name="toolTip">
+        <string>Opacity of ordinary beats relative to the main beat grid opacity. Bar and 16-beat markers keep the main opacity. Requires a modern GLSL waveform (without "legacy" in its name).</string>
+       </property>
+       <property name="suffix">
+        <string>%</string>
+       </property>
+       <property name="maximum">
+        <number>100</number>
+       </property>
+       <property name="value">
+        <number>60</number>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="0">
+      <layout class="QHBoxLayout" name="beatGridAccentLayout">
+       <item>
+        <widget class="QCheckBox" name="beatGridAccentCheckBox">
+         <property name="toolTip">
+          <string>Draw bar markers (every 4 beats) and 16-beat markers in the chosen color. Ordinary beats keep the skin color. Bars are counted from the first beat grid marker and assume 4 beats per bar; 16-beat markers are fixed references, not detected phrases. Requires a modern GLSL waveform (without "legacy" in its name).</string>
+         </property>
+         <property name="text">
+          <string>Color bar markers</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="beatGridAccentColorButton">
+         <property name="toolTip">
+          <string>Choose the color of bar and 16-beat markers.</string>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>48</width>
+           <height>16777215</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
      <item row="9" column="1">
       <widget class="QCheckBox" name="normalizeOverviewCheckBox">
        <property name="text">
@@ -707,6 +787,11 @@ Select from different types of displays for the waveform, which differ primarily
   <tabstop>endOfTrackWarningTimeSpinBox</tabstop>
   <tabstop>beatGridAlphaSlider</tabstop>
   <tabstop>beatGridAlphaSpinBox</tabstop>
+  <tabstop>beatGridStyleComboBox</tabstop>
+  <tabstop>beatGridAdaptiveCheckBox</tabstop>
+  <tabstop>beatGridBeatAlphaSpinBox</tabstop>
+  <tabstop>beatGridAccentCheckBox</tabstop>
+  <tabstop>beatGridAccentColorButton</tabstop>
   <tabstop>playMarkerPositionSlider</tabstop>
   <tabstop>defaultZoomComboBox</tabstop>
   <tabstop>synchronizeZoomCheckBox</tabstop>

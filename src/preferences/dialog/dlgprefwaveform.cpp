@@ -1,5 +1,6 @@
 #include "preferences/dialog/dlgprefwaveform.h"
 
+#include <QColorDialog>
 #include <QMetaEnum>
 
 #include "control/controlpushbutton.h"
@@ -62,12 +63,38 @@ DlgPrefWaveform::DlgPrefWaveform(
     // Sort the combobox items alphabetically
     waveformTypeComboBox->model()->sort(0);
 
-    // Populate zoom options.
-    for (int i = static_cast<int>(WaveformWidgetRenderer::s_waveformMinZoom);
-            i <= static_cast<int>(WaveformWidgetRenderer::s_waveformMaxZoom);
-            i++) {
-        defaultZoomComboBox->addItem(QString::number(100 / static_cast<double>(i), 'f', 1) + " %");
+    // Populate zoom options. The original 1..10 steps are kept, larger
+    // (zoomed out) levels use a coarser list so the menu stays short.
+    // The item data holds the zoom factor.
+    {
+        QList<int> zoomLevels;
+        for (int i = static_cast<int>(WaveformWidgetRenderer::s_waveformMinZoom); i <= 10; ++i) {
+            zoomLevels.append(i);
+        }
+        zoomLevels << 12 << 15 << 20 << 25 << 30 << 40 << 50 << 60 << 75 << 100
+                   << 150 << 200 << 300 << 500 << 1000;
+        const int maxZoom = static_cast<int>(WaveformWidgetRenderer::s_waveformMaxZoom);
+        for (int zoom : std::as_const(zoomLevels)) {
+            if (zoom > maxZoom) {
+                break;
+            }
+            defaultZoomComboBox->addItem(
+                    QString::number(100 / static_cast<double>(zoom), 'f', 1) + " %",
+                    zoom);
+        }
+        if (defaultZoomComboBox->findData(maxZoom) < 0) {
+            defaultZoomComboBox->addItem(
+                    QString::number(100 / static_cast<double>(maxZoom), 'f', 1) + " %",
+                    maxZoom);
+        }
     }
+
+    beatGridStyleComboBox->addItem(tr("Lines"),
+            static_cast<int>(WaveformWidgetRenderer::BeatGridStyle::Lines));
+    beatGridStyleComboBox->addItem(tr("Ticks (top and bottom)"),
+            static_cast<int>(WaveformWidgetRenderer::BeatGridStyle::Ticks));
+    beatGridStyleComboBox->addItem(tr("Bar lines + beat ticks"),
+            static_cast<int>(WaveformWidgetRenderer::BeatGridStyle::Hybrid));
 
     // Populate untilMark options
     untilMarkAlignComboBox->addItem(tr("Top"));
@@ -131,6 +158,26 @@ DlgPrefWaveform::DlgPrefWaveform(
             &QCheckBox::clicked,
             this,
             &DlgPrefWaveform::slotSetZoomSynchronization);
+    connect(beatGridStyleComboBox,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            &DlgPrefWaveform::slotSetBeatGridStyle);
+    connect(beatGridAdaptiveCheckBox,
+            &QCheckBox::toggled,
+            this,
+            &DlgPrefWaveform::slotSetBeatGridAdaptive);
+    connect(beatGridBeatAlphaSpinBox,
+            QOverload<int>::of(&QSpinBox::valueChanged),
+            this,
+            &DlgPrefWaveform::slotSetBeatGridBeatAlpha);
+    connect(beatGridAccentCheckBox,
+            &QCheckBox::toggled,
+            this,
+            &DlgPrefWaveform::slotSetBeatGridAccentEnabled);
+    connect(beatGridAccentColorButton,
+            &QPushButton::clicked,
+            this,
+            &DlgPrefWaveform::slotChooseBeatGridAccentColor);
     connect(allVisualGain,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             this,
@@ -221,8 +268,14 @@ void DlgPrefWaveform::slotUpdate() {
     midVisualGain->setValue(factory->getVisualGain(WaveformWidgetFactory::Mid));
     highVisualGain->setValue(factory->getVisualGain(WaveformWidgetFactory::High));
     normalizeOverviewCheckBox->setChecked(factory->isOverviewNormalized());
-    // Round zoom to int to get a default zoom index.
-    defaultZoomComboBox->setCurrentIndex(static_cast<int>(factory->getDefaultZoom()) - 1);
+    selectDefaultZoom(factory->getDefaultZoom());
+    beatGridStyleComboBox->setCurrentIndex(beatGridStyleComboBox->findData(
+            static_cast<int>(factory->getBeatGridStyle())));
+    beatGridAdaptiveCheckBox->setChecked(factory->isBeatGridAdaptive());
+    beatGridBeatAlphaSpinBox->setValue(factory->getBeatGridBeatAlpha());
+    beatGridAccentCheckBox->setChecked(factory->isBeatGridAccentEnabled());
+    beatGridAccentColorButton->setEnabled(factory->isBeatGridAccentEnabled());
+    updateBeatGridAccentColorButton(factory->getBeatGridAccentColor());
     playMarkerPositionSlider->setValue(static_cast<int>(factory->getPlayMarkerPosition() * 100));
     beatGridAlphaSpinBox->setValue(factory->getBeatGridAlpha());
     beatGridAlphaSlider->setValue(factory->getBeatGridAlpha());
@@ -276,8 +329,7 @@ void DlgPrefWaveform::slotResetToDefaults() {
     midVisualGain->setValue(1.0);
     highVisualGain->setValue(1.0);
 
-    // Default zoom level is 3 in WaveformWidgetFactory.
-    defaultZoomComboBox->setCurrentIndex(3 + 1);
+    selectDefaultZoom(WaveformWidgetRenderer::s_waveformDefaultZoom);
 
     synchronizeZoomCheckBox->setChecked(true);
 
@@ -299,6 +351,15 @@ void DlgPrefWaveform::slotResetToDefaults() {
     // Beat grid alpha default is 90
     beatGridAlphaSlider->setValue(90);
     beatGridAlphaSpinBox->setValue(90);
+    beatGridStyleComboBox->setCurrentIndex(beatGridStyleComboBox->findData(
+            static_cast<int>(WaveformWidgetRenderer::BeatGridStyle::Lines)));
+    beatGridAdaptiveCheckBox->setChecked(true);
+    beatGridBeatAlphaSpinBox->setValue(60);
+    beatGridAccentCheckBox->setChecked(false);
+    WaveformWidgetFactory::instance()->setBeatGridAccentColor(
+            QColor::fromRgb(WaveformWidgetFactory::kDefaultBeatGridAccentColor));
+    updateBeatGridAccentColorButton(
+            QColor::fromRgb(WaveformWidgetFactory::kDefaultBeatGridAccentColor));
 
     // 50 (center) is default
     playMarkerPositionSlider->setValue(50);
@@ -344,8 +405,76 @@ void DlgPrefWaveform::slotSetWaveformOverviewType() {
     m_pTypeControl->forceSet(static_cast<double>(type));
 }
 
+void DlgPrefWaveform::selectDefaultZoom(double zoom) {
+    // Preserve saved fractional/custom levels instead of rounding them to a
+    // preset merely because the user opened the preferences.
+    int insertIndex = defaultZoomComboBox->count();
+    for (int i = 0; i < defaultZoomComboBox->count(); ++i) {
+        const double itemZoom = defaultZoomComboBox->itemData(i).toDouble();
+        if (qFuzzyCompare(itemZoom, zoom)) {
+            defaultZoomComboBox->setCurrentIndex(i);
+            return;
+        }
+        if (itemZoom > zoom) {
+            insertIndex = i;
+            break;
+        }
+    }
+    defaultZoomComboBox->insertItem(insertIndex,
+            QString::number(100 / zoom, 'f', 1) + " %",
+            zoom);
+    defaultZoomComboBox->setCurrentIndex(insertIndex);
+}
+
 void DlgPrefWaveform::slotSetDefaultZoom(int index) {
-    WaveformWidgetFactory::instance()->setDefaultZoom(index + 1);
+    if (index < 0) {
+        return;
+    }
+    WaveformWidgetFactory::instance()->setDefaultZoom(
+            defaultZoomComboBox->itemData(index).toDouble());
+}
+
+void DlgPrefWaveform::slotSetBeatGridStyle(int index) {
+    if (index < 0) {
+        return;
+    }
+    WaveformWidgetFactory::instance()->setBeatGridStyle(
+            static_cast<WaveformWidgetRenderer::BeatGridStyle>(
+                    beatGridStyleComboBox->itemData(index).toInt()));
+}
+
+void DlgPrefWaveform::slotSetBeatGridAdaptive(bool checked) {
+    WaveformWidgetFactory::instance()->setBeatGridAdaptive(checked);
+}
+
+void DlgPrefWaveform::slotSetBeatGridBeatAlpha(int alpha) {
+    WaveformWidgetFactory::instance()->setBeatGridBeatAlpha(alpha);
+}
+
+void DlgPrefWaveform::slotSetBeatGridAccentEnabled(bool checked) {
+    beatGridAccentColorButton->setEnabled(checked);
+    WaveformWidgetFactory::instance()->setBeatGridAccentEnabled(checked);
+}
+
+void DlgPrefWaveform::slotChooseBeatGridAccentColor() {
+    auto* factory = WaveformWidgetFactory::instance();
+    const QColor color = QColorDialog::getColor(factory->getBeatGridAccentColor(),
+            this,
+            tr("Bar marker color"));
+    if (!color.isValid()) {
+        return; // dialog cancelled
+    }
+    factory->setBeatGridAccentColor(color);
+    updateBeatGridAccentColorButton(factory->getBeatGridAccentColor());
+}
+
+void DlgPrefWaveform::updateBeatGridAccentColorButton(const QColor& color) {
+    // Show the color as a swatch on the button.
+    beatGridAccentColorButton->setStyleSheet(
+            QStringLiteral("QPushButton { background-color: %1; }")
+                    .arg(color.name(QColor::HexRgb)));
+    beatGridAccentColorButton->setAccessibleName(
+            tr("Bar marker color: %1").arg(color.name(QColor::HexRgb)));
 }
 
 void DlgPrefWaveform::slotSetZoomSynchronization(bool checked) {

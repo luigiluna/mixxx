@@ -38,6 +38,11 @@ class DlgPrefWaveform : public DlgPreferencePage, public Ui::DlgPrefWaveformDlg 
     void slotWaveformMeasured(float frameRate, int droppedFrames);
     void slotClearCachedWaveforms();
     void slotSetBeatGridAlpha(int alpha);
+    void slotSetBeatGridStyle(int index);
+    void slotSetBeatGridAdaptive(bool checked);
+    void slotSetBeatGridBeatAlpha(int alpha);
+    void slotSetBeatGridAccentEnabled(bool checked);
+    void slotChooseBeatGridAccentColor();
     void slotSetPlayMarkerPosition(int position);
     void slotSetUntilMarkShowBeats(bool checked);
     void slotSetUntilMarkShowTime(bool checked);
@@ -47,6 +52,8 @@ class DlgPrefWaveform : public DlgPreferencePage, public Ui::DlgPrefWaveformDlg 
 
   private:
     void initWaveformControl();
+    void selectDefaultZoom(double zoom);
+    void updateBeatGridAccentColorButton(const QColor& color);
     void calculateCachedWaveformDiskUsage();
     void notifyRebootNecessary();
     void updateEnableUntilMark();

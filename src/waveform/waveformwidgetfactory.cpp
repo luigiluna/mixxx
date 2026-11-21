@@ -144,6 +144,11 @@ WaveformWidgetFactory::WaveformWidgetFactory()
           m_openGlesAvailable(false),
           m_openGLShaderAvailable(false),
           m_beatGridAlpha(90),
+          m_beatGridStyle(WaveformWidgetRenderer::BeatGridStyle::Lines),
+          m_beatGridAdaptive(true),
+          m_beatGridBeatAlpha(60),
+          m_beatGridAccentEnabled(false),
+          m_beatGridAccentColor(QColor::fromRgb(kDefaultBeatGridAccentColor)),
           m_vsyncThread(nullptr),
           m_pGuiTick(nullptr),
           m_pVisualsManager(nullptr),
@@ -388,6 +393,14 @@ bool WaveformWidgetFactory::setConfig(UserSettingsPointer config) {
                 ConfigValue(m_endOfTrackWarningTime));
     }
 
+    // Larger values show more samples per pixel (zoom out). Keep the original
+    // 1..10 range available and bound the preferences list for invalid input.
+    int maxZoom = m_config->getValueString(ConfigKey("[Waveform]", "MaxZoom")).toInt(&ok);
+    if (!ok || maxZoom < 10 || maxZoom > 1000) {
+        maxZoom = WaveformWidgetRenderer::s_waveformDefaultMaxZoom;
+    }
+    WaveformWidgetRenderer::s_waveformMaxZoom = maxZoom;
+
     double defaultZoom = m_config->getValueString(ConfigKey("[Waveform]","DefaultZoom")).toDouble(&ok);
     if (ok) {
         setDefaultZoom(defaultZoom);
@@ -400,6 +413,30 @@ bool WaveformWidgetFactory::setConfig(UserSettingsPointer config) {
 
     int beatGridAlpha = m_config->getValue(ConfigKey("[Waveform]", "beatGridAlpha"), m_beatGridAlpha);
     setDisplayBeatGridAlpha(beatGridAlpha);
+
+    int beatGridStyle = m_config->getValue(ConfigKey("[Waveform]", "beatGridStyle"),
+            static_cast<int>(m_beatGridStyle));
+    if (beatGridStyle < static_cast<int>(WaveformWidgetRenderer::BeatGridStyle::Lines) ||
+            beatGridStyle > static_cast<int>(WaveformWidgetRenderer::BeatGridStyle::Hybrid)) {
+        beatGridStyle = static_cast<int>(WaveformWidgetRenderer::BeatGridStyle::Lines);
+    }
+    setBeatGridStyle(static_cast<WaveformWidgetRenderer::BeatGridStyle>(beatGridStyle));
+
+    bool beatGridAdaptive = m_config->getValue(
+            ConfigKey("[Waveform]", "beatGridAdaptive"), m_beatGridAdaptive);
+    setBeatGridAdaptive(beatGridAdaptive);
+    setBeatGridBeatAlpha(m_config->getValue(
+            ConfigKey("[Waveform]", "beatGridBeatAlpha"), m_beatGridBeatAlpha));
+
+    // Stored as "#RRGGBB"; an invalid or missing value keeps the default.
+    const QColor beatGridAccentColor(m_config->getValueString(
+            ConfigKey("[Waveform]", "beatGridAccentColor")));
+    if (beatGridAccentColor.isValid()) {
+        m_beatGridAccentColor = beatGridAccentColor.toRgb();
+        m_beatGridAccentColor.setAlpha(255);
+    }
+    setBeatGridAccentEnabled(m_config->getValue(
+            ConfigKey("[Waveform]", "beatGridAccentEnabled"), m_beatGridAccentEnabled));
 
     WaveformWidgetType::Type type = static_cast<WaveformWidgetType::Type>(
             m_config->getValueString(ConfigKey("[Waveform]","WaveformType")).toInt(&ok));
@@ -539,6 +576,10 @@ bool WaveformWidgetFactory::setWaveformWidget(WWaveformViewer* viewer,
 
     viewer->setZoom(m_defaultZoom);
     viewer->setDisplayBeatGridAlpha(m_beatGridAlpha);
+    waveformWidget->setBeatGridStyle(m_beatGridStyle);
+    waveformWidget->setBeatGridAdaptive(m_beatGridAdaptive);
+    waveformWidget->setBeatGridBeatAlpha(m_beatGridBeatAlpha);
+    waveformWidget->setBeatGridAccentColor(effectiveBeatGridAccentColor());
     viewer->setPlayMarkerPosition(m_playMarkerPosition);
     waveformWidget->resize(viewer->width(), viewer->height());
     waveformWidget->getWidget()->show();
@@ -665,6 +706,10 @@ bool WaveformWidgetFactory::setWidgetTypeFromHandle(int handleIndex, bool force)
         viewer->setZoom(previousZoom);
         viewer->setPlayMarkerPosition(previousPlayMarkerPosition);
         viewer->setDisplayBeatGridAlpha(previousbeatgridAlpha);
+        widget->setBeatGridStyle(m_beatGridStyle);
+        widget->setBeatGridAdaptive(m_beatGridAdaptive);
+        widget->setBeatGridBeatAlpha(m_beatGridBeatAlpha);
+        widget->setBeatGridAccentColor(effectiveBeatGridAccentColor());
         // resize() doesn't seem to get called on the widget. I think Qt skips
         // it since the size didn't change.
         //viewer->resize(viewer->size());
@@ -715,6 +760,69 @@ void WaveformWidgetFactory::setDisplayBeatGridAlpha(int alpha) {
     for (const auto& holder : std::as_const(m_waveformWidgetHolders)) {
         holder.m_waveformWidget->setDisplayBeatGridAlpha(m_beatGridAlpha);
     }
+}
+
+void WaveformWidgetFactory::setBeatGridStyle(WaveformWidgetRenderer::BeatGridStyle style) {
+    m_beatGridStyle = style;
+    if (m_config) {
+        m_config->setValue(ConfigKey("[Waveform]", "beatGridStyle"), static_cast<int>(style));
+    }
+    for (const auto& holder : std::as_const(m_waveformWidgetHolders)) {
+        holder.m_waveformWidget->setBeatGridStyle(m_beatGridStyle);
+    }
+}
+
+void WaveformWidgetFactory::setBeatGridAdaptive(bool adaptive) {
+    m_beatGridAdaptive = adaptive;
+    if (m_config) {
+        m_config->setValue(ConfigKey("[Waveform]", "beatGridAdaptive"), adaptive);
+    }
+    for (const auto& holder : std::as_const(m_waveformWidgetHolders)) {
+        holder.m_waveformWidget->setBeatGridAdaptive(m_beatGridAdaptive);
+    }
+}
+
+void WaveformWidgetFactory::setBeatGridBeatAlpha(int alpha) {
+    m_beatGridBeatAlpha = math_clamp(alpha, 0, 100);
+    if (m_config) {
+        m_config->setValue(ConfigKey("[Waveform]", "beatGridBeatAlpha"), m_beatGridBeatAlpha);
+    }
+    for (const auto& holder : std::as_const(m_waveformWidgetHolders)) {
+        holder.m_waveformWidget->setBeatGridBeatAlpha(m_beatGridBeatAlpha);
+    }
+}
+
+QColor WaveformWidgetFactory::effectiveBeatGridAccentColor() const {
+    // An invalid color tells the renderer to use the skin's BeatColor.
+    return m_beatGridAccentEnabled ? m_beatGridAccentColor : QColor();
+}
+
+void WaveformWidgetFactory::applyBeatGridAccentColor() {
+    const QColor color = effectiveBeatGridAccentColor();
+    for (const auto& holder : std::as_const(m_waveformWidgetHolders)) {
+        holder.m_waveformWidget->setBeatGridAccentColor(color);
+    }
+}
+
+void WaveformWidgetFactory::setBeatGridAccentEnabled(bool enabled) {
+    m_beatGridAccentEnabled = enabled;
+    if (m_config) {
+        m_config->setValue(ConfigKey("[Waveform]", "beatGridAccentEnabled"), enabled);
+    }
+    applyBeatGridAccentColor();
+}
+
+void WaveformWidgetFactory::setBeatGridAccentColor(const QColor& color) {
+    if (!color.isValid()) {
+        return;
+    }
+    m_beatGridAccentColor = color.toRgb();
+    m_beatGridAccentColor.setAlpha(255);
+    if (m_config) {
+        m_config->setValue(ConfigKey("[Waveform]", "beatGridAccentColor"),
+                m_beatGridAccentColor.name(QColor::HexRgb));
+    }
+    applyBeatGridAccentColor();
 }
 
 void WaveformWidgetFactory::setVisualGain(FilterIndex index, double gain) {

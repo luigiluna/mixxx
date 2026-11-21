@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QColor>
 #include <QObject>
 #include <QSurfaceFormat>
 #include <QVector>
@@ -9,6 +10,7 @@
 #include "skin/legacy/skincontext.h"
 #include "util/performancetimer.h"
 #include "util/singleton.h"
+#include "waveform/renderers/waveformwidgetrenderer.h"
 #include "waveform/widgets/waveformwidgettype.h"
 
 class WVuMeterLegacy;
@@ -142,6 +144,31 @@ class WaveformWidgetFactory : public QObject, public Singleton<WaveformWidgetFac
     void setDisplayBeatGridAlpha(int alpha);
     int getBeatGridAlpha() const { return m_beatGridAlpha; }
 
+    void setBeatGridStyle(WaveformWidgetRenderer::BeatGridStyle style);
+    WaveformWidgetRenderer::BeatGridStyle getBeatGridStyle() const {
+        return m_beatGridStyle;
+    }
+    void setBeatGridAdaptive(bool adaptive);
+    bool isBeatGridAdaptive() const {
+        return m_beatGridAdaptive;
+    }
+    void setBeatGridBeatAlpha(int alpha);
+    int getBeatGridBeatAlpha() const {
+        return m_beatGridBeatAlpha;
+    }
+    // Suggested accent color (amber), used until the user picks another one.
+    static constexpr QRgb kDefaultBeatGridAccentColor = 0xffffb000;
+    // Color for bar and 16-beat markers. When disabled the skin color is used;
+    // the chosen color is kept so it can be re-enabled later.
+    void setBeatGridAccentEnabled(bool enabled);
+    bool isBeatGridAccentEnabled() const {
+        return m_beatGridAccentEnabled;
+    }
+    void setBeatGridAccentColor(const QColor& color);
+    const QColor& getBeatGridAccentColor() const {
+        return m_beatGridAccentColor;
+    }
+
     void setVisualGain(FilterIndex index, double gain);
     double getVisualGain(FilterIndex index) const;
 
@@ -193,6 +220,8 @@ class WaveformWidgetFactory : public QObject, public Singleton<WaveformWidgetFac
     void slotFrameSwapped();
 
   private:
+    QColor effectiveBeatGridAccentColor() const;
+    void applyBeatGridAccentColor();
     void renderSelf();
     void swapSelf();
 
@@ -236,6 +265,11 @@ class WaveformWidgetFactory : public QObject, public Singleton<WaveformWidgetFac
     QString m_openGLVersion;
     bool m_openGLShaderAvailable;
     int m_beatGridAlpha;
+    WaveformWidgetRenderer::BeatGridStyle m_beatGridStyle;
+    bool m_beatGridAdaptive;
+    int m_beatGridBeatAlpha;
+    bool m_beatGridAccentEnabled;
+    QColor m_beatGridAccentColor;
 
     VSyncThread* m_vsyncThread;
     GuiTick* m_pGuiTick;  // not owned

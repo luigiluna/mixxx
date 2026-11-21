@@ -11,7 +11,7 @@
 #include "waveform/waveform.h"
 
 const double WaveformWidgetRenderer::s_waveformMinZoom = 1.0;
-const double WaveformWidgetRenderer::s_waveformMaxZoom = 10.0;
+double WaveformWidgetRenderer::s_waveformMaxZoom = s_waveformDefaultMaxZoom;
 const double WaveformWidgetRenderer::s_waveformDefaultZoom = 3.0;
 const double WaveformWidgetRenderer::s_defaultPlayMarkerPosition = 0.5;
 
@@ -33,6 +33,9 @@ WaveformWidgetRenderer::WaveformWidgetRenderer(const QString& group)
           m_visualSamplePerPixel(1.0),
           m_audioSamplePerPixel(1.0),
           m_alphaBeatGrid(90),
+          m_beatGridStyle(BeatGridStyle::Lines),
+          m_beatGridAdaptive(true),
+          m_beatGridBeatAlpha(60),
           // Really create some to manage those;
           m_visualPlayPosition(nullptr),
           m_totalVSamples(0),
